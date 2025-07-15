@@ -6,6 +6,8 @@ USE SISTEMA_DE_VENTA
 
 GO
 
+--Las tablas están declaradas en el orden en que deben ser creadas para evitar problemas; las tablas deben ser creadas una por una
+
 create table ROL(
 IdRol int primary key identity(1,1),
 nombreRol varchar (50) not null,
@@ -126,4 +128,11 @@ PrecioVenta decimal (10, 2) default 0,
 Cantidad int not null,
 SubTotal decimal (10, 2) default 0,
 FechaRegistro datetime default getdate());
+go
+
+create table DatosNegocio(
+idNegocio int identity (1,1) primary key,
+nombreNegocio varchar (20) not null,
+NIT_DatoNegocio char(17) unique not null, --Se le da al NIT del negocio una longitud de 17 caracteres fijos, ya que son 14 números separados en bloques por 3 guiones
+ubicacionNegocio varchar (60) not null);
 go
