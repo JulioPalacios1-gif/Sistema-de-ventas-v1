@@ -264,3 +264,4 @@ VALUES
 ('PS01', 'Flan de vainilla', 'Porción individual', 7, 15, 40, 0.50, 1.00, 1),
 ('PS02', 'Gelatina de colores', 'Vaso mediano', 7, 15, 30, 0.30, 0.60, 1);
 
+select * from USUARIO
