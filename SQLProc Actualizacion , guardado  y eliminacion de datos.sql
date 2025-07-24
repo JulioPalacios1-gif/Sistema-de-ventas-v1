@@ -117,3 +117,71 @@ select @respuesta
 select @mensaje
 
 select * from USUARIO
+
+create Proc SP_RegistrarProveedor(
+@Documento varchar (50),
+@RazonSocial varchar (50),
+@Correo varchar (50),
+@Telefono varchar (50),
+@Estado bit,
+@Resultado int output,
+@Mensaje varchar (500) output)
+as
+begin
+	SET @Resultado = 0
+	declare @IDPERSONA int
+	if not exists (select * from PROVEEDOR where documentoProveedor = @Documento)
+	begin
+	insert into PROVEEDOR (documentoProveedor, razonSocialProveedor, correoProveedor, telefonoProveedor, Estado) values (
+	@Documento, @RazonSocial, @Correo, @Telefono, @Estado)
+		set @Resultado = SCOPE_IDENTITY()
+	end
+	else
+		set @Mensaje = 'El numero de documento ya existe'
+	end
+
+create Proc SP_ModificarProveedor(
+@idProveedor int,
+@Documento varchar (50),
+@RazonSocial varchar (50),
+@Correo varchar (50),
+@Telefono varchar (50),
+@Estado bit,
+@Resultado int output,
+@Mensaje varchar (500) output)
+as
+begin 
+	set @Resultado = 1 
+	declare @ISPERSONA int 
+	if NOT EXISTS (select * from PROVEEDOR where documentoProveedor = @Documento and IdProveedor != @idProveedor)
+	begin 
+		update PROVEEDOR set 
+		documentoProveedor = @Documento,
+		razonSocialProveedor = @RazonSocial,
+		correoProveedor = @Correo,
+		telefonoProveedor = @Telefono,
+		Estado = @Estado
+		where IdProveedor = @idProveedor
+	end
+	else
+	begin
+			set @Resultado = 0
+			set @Mensaje = 'El numero de documento ya existe'
+	end
+end
+
+create Proc SP_EliminarProveedor(
+@IdProveedor int, 
+@Resultado bit output,
+@Mensaje varchar (500) output)
+as
+begin 
+	set @Resultado = 1
+	begin 
+	delete top(1) from PROVEEDOR where IdProveedor = @IdProveedor
+	end
+	end
+
+
+	select * from USUARIO
+	select IdProveedor, documentoProveedor, razonSocialProveedor, correoProveedor, telefonoProveedor, Estado from PROVEEDOR 
