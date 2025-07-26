@@ -265,3 +265,408 @@ VALUES
 ('PS02', 'Gelatina de colores', 'Vaso mediano', 7, 15, 30, 0.30, 0.60, 1);
 
 select * from USUARIO
+
+alter  proc SP_CrearCategoria(
+@Descripcion varchar(50),
+@Resultado bit output,
+@Estado bit,
+@Mensaje varchar(500) output
+) as
+begin
+	SET @Resultado = 0
+	IF NOT EXISTS (SELECT *FROM CATEGORIA WHERE descripcionCategoria = @Descripcion)
+	begin
+		insert into CATEGORIA(descripcionCategoria, Estado) values (@Descripcion, @Estado)
+		set @Resultado = SCOPE_IDENTITY()
+	end
+	ELSE
+		set @Mensaje='No se puede repetir la descripción de una categoría'
+end
+go
+
+alter PROC SP_ModificarCategoria(
+@IdCategoria int,
+@Estado bit,
+@Descripcion varchar(50),
+@Resultado bit output,
+@Mensaje varchar(500) output
+) as
+begin
+	SET @Resultado = 1
+	IF NOT EXISTS (SELECT *FROM CATEGORIA WHERE descripcionCategoria = @Descripcion and IdCategoria!=@IdCategoria)
+		update CATEGORIA set descripcionCategoria=@Descripcion, Estado=@Estado where IdCategoria=@IdCategoria
+	else
+	begin
+		set @Resultado=0
+		set @Mensaje='No se puede repetir la descripción de una categoría'
+	end
+end
+go
+
+CREATE PROC SP_EliminarCategoria(
+@IdCategoria int,
+@Resultado bit output,
+@Mensaje varchar(500) output
+) as
+begin
+	SET @Resultado = 1
+	IF NOT EXISTS (select *from CATEGORIA c inner join Producto p on p.categoria_id=c.IdCategoria where c.IdCategoria = @IdCategoria)
+	begin
+		delete top(1) from CATEGORIA where IdCategoria = @IdCategoria
+	end
+	else
+	begin
+		set @Resultado=0
+		set @Mensaje='La categoría no puede ser eliminada, puesto que se encuentra relacionada a un producto'
+	end
+end
+go
+
+select *from PROVEEDOR
+go
+
+select P.IdProducto,P.codigoProducto, P.nombreProducto, P.descripcionProducto,c.IdCategoria, c.descripcionCategoria as Categoria,pr.IdProveedor, pr.razonSocialProveedor, P.Stock, P.PrecioCompra, P.PrecioVenta, P.Estado from PRODUCTO P
+inner join CATEGORIA c on C.IdCategoria=P.categoria_id
+inner join PROVEEDOR pr on pr.IdProveedor=p.proveedor_id
+
+go
+create proc SP_CrearProducto(
+@CodigoProducto varchar(50),
+@nombreProducto varchar (75),
+@descripcionProducto varchar (100),
+@IdCategoria int,
+@IdProveedor int,
+@Stock int,
+@PrecioCompra decimal (10,2),
+@PrecioVenta decimal (10,2),
+@Estado bit,
+@Resultado bit output,
+@Mensaje varchar (500) output
+)
+as
+begin
+	SET @Resultado=0
+	If not exists (Select *from PRODUCTO where codigoProducto=@CodigoProducto)
+	begin
+		insert into PRODUCTO (codigoProducto,nombreProducto,descripcionProducto,categoria_id,proveedor_id, Stock, PrecioCompra, PrecioVenta, Estado) values(@CodigoProducto, @nombreProducto,  @descripcionProducto, @IdCategoria, @IdProveedor, @Stock, @PrecioCompra, @PrecioVenta, @Estado)
+		SET @Resultado=SCOPE_IDENTITY()
+	end
+	else
+	set @Mensaje='Ya existe un producto con el mismo código'
+end
+GO
+
+
+Create proc SP_ModificarProducto(
+@IdProducto int,
+@CodigoProducto varchar(50),
+@nombreProducto varchar (75),
+@descripcionProducto varchar (100),
+@IdCategoria int,
+@IdProveedor int,
+@Stock int,
+@PrecioCompra decimal (10,2),
+@PrecioVenta decimal (10,2),
+@Estado bit,
+@Resultado bit output,
+@Mensaje varchar (500) output
+)
+as
+begin
+	SET @Resultado=1
+	If not exists (Select *from PRODUCTO where codigoProducto=@CodigoProducto and IdProducto!=@IdProducto)
+	begin
+		update PRODUCTO set
+			codigoProducto=@CodigoProducto,
+			nombreProducto=@nombreProducto,
+			descripcionProducto=@descripcionProducto,
+			categoria_id=@IdCategoria,
+			proveedor_id=@IdProveedor,
+			Stock=@Stock,
+			PrecioCompra=@PrecioCompra,
+			PrecioVenta=@PrecioVenta,
+			Estado=@Estado
+			where IdProducto=@IdProducto
+	end
+	else
+		begin
+			set @Resultado=0
+			set @Mensaje='Ya existe un producto con el mismo código'
+		end
+end
+go
+
+create proc SP_EliminarProducto(
+@IdProducto int, 
+@Respuesta bit output,
+@Mensaje varchar (500) output
+) as
+begin
+	set @Respuesta=0
+	set @Mensaje=''
+	declare @pasoreglas bit =1
+	if exists (select *from DETALLE_COMPRA dc
+	inner join PRODUCTO p on p.IdProducto=dc.producto_id
+	where p.IdProducto=@IdProducto)
+	begin
+		set @pasoreglas=0
+		set @Respuesta=0
+		set @Mensaje = @Mensaje + 'No se puede elimnar el producto, puesto que se encuentra relacionado a una compra\n'
+	end
+	if exists (select *from DETALLE_VENTA dv
+	inner join PRODUCTO p on p.IdProducto=dv.producto_id
+	where p.IdProducto=@IdProducto)
+	begin
+		set @pasoreglas=0
+		set @Respuesta=0
+		set @Mensaje = @Mensaje + 'No se puede elimnar el producto, puesto que se encuentra relacionado a una venta\n'
+	end
+	if (@pasoreglas=1)
+		begin
+			delete from PRODUCTO where IdProducto=@IdProducto
+			SET @Respuesta=1
+		end
+end
+go
+
+
+create PROC SP_REGISTRARUSUARIO(
+@Documento varchar(50),
+@nombreCompletoUsuario varchar (100),
+@correoUsuario varchar (100),
+@Clave varchar (100),
+@rol_id int,
+@Estado bit,
+@IdUsuarioResultado int output,
+@Mensaje varchar (500) output
+)
+as
+begin 
+	set @IdUsuarioResultado = 0 
+	set @Mensaje = ''
+
+	if not exists(select * from USUARIO where DocumentoUsuario = @Documento)
+	begin
+		insert into USUARIO (DocumentoUsuario, nombreCompletoUsuario, correoUsuario, Clave, rol_id, Estado) values
+		(@Documento, @nombreCompletoUsuario, @correoUsuario, @Clave, @rol_id, @Estado)
+
+		set @IdUsuarioResultado = SCOPE_IDENTITY()
+
+	end
+	else
+		set @Mensaje = 'No se puede repetir el documento para mas de un usuario'
+
+end
+go
+
+create PROC SP_EDITARUSUARIO(
+@idUsuario int,
+@Documento varchar(50),
+@nombreCompletoUsuario varchar (100),
+@correoUsuario varchar (100),
+@Clave varchar (100),
+@rol_id int,
+@Estado bit output,
+@Respuesta BIT output,
+@Mensaje varchar (500) output
+)
+as
+begin 
+	set @Respuesta = 0 
+	set @Mensaje = ''
+
+	if not exists(select * from USUARIO where DocumentoUsuario = @Documento and IdUsuario != @idUsuario)
+	begin
+		update USUARIO set
+		DocumentoUsuario = @Documento,
+		nombreCompletoUsuario = @nombreCompletoUsuario,
+		correoUsuario = @correoUsuario,
+		Clave = @Clave,
+		rol_id = @rol_id,
+		Estado = @Estado
+		where IdUsuario = @idUsuario
+		
+
+		set @Respuesta = 1
+
+	end
+	else
+		set @Mensaje = 'No se puede repetir el documento para mas de un usuario'
+
+end
+go
+
+
+create PROC SP_ELIMINARUSUARIO(
+@idUsuario int,
+@Respuesta BIT output,
+@Mensaje varchar (500) output
+)
+as
+begin 
+	set @Respuesta = 0 
+	set @Mensaje = ''
+	declare @PasoReglas bit = 1
+
+	IF Exists(select * from VENTA V 
+	inner join USUARIO U on U.IdUsuario = V.usuario_id 
+	where U.IdUsuario = @idUsuario)
+
+	begin
+		set @PasoReglas = 0
+		set @Respuesta = 0
+		set @Mensaje = @Mensaje + 'No se puede eliminar, el usuario se encuentra relacionado a una venta\n'
+	end
+
+		IF Exists(select * from COMPRA C 
+	inner join USUARIO U on U.IdUsuario = C.usuario_id 
+	where U.IdUsuario = @idUsuario)
+
+	begin
+		set @PasoReglas = 0
+		set @Respuesta = 0
+		set @Mensaje = @Mensaje + 'No se puede eliminar, el usuario se encuentra relacionado a una compra\n'
+	end
+
+	if (@PasoReglas = 1)
+	begin
+		delete from USUARIO where IdUsuario = @idUsuario
+		set @Respuesta = 1
+	end
+end
+go
+
+declare @respuesta bit
+declare @mensaje varchar (500)
+
+exec SP_EDITARUSUARIO 17, '123', 'Pruebas 3', 'test@gmail.com', '456', 2,1, @respuesta output, @mensaje output
+
+select @respuesta
+select @mensaje
+
+select * from USUARIO
+
+create Proc SP_RegistrarProveedor(
+@Documento varchar (50),
+@RazonSocial varchar (50),
+@Correo varchar (50),
+@Telefono varchar (50),
+@Estado bit,
+@Resultado int output,
+@Mensaje varchar (500) output)
+as
+begin
+	SET @Resultado = 0
+	declare @IDPERSONA int
+	if not exists (select * from PROVEEDOR where documentoProveedor = @Documento)
+	begin
+	insert into PROVEEDOR (documentoProveedor, razonSocialProveedor, correoProveedor, telefonoProveedor, Estado) values (
+	@Documento, @RazonSocial, @Correo, @Telefono, @Estado)
+		set @Resultado = SCOPE_IDENTITY()
+	end
+	else
+		set @Mensaje = 'El numero de documento ya existe'
+end
+go
+
+create Proc SP_ModificarProveedor(
+@idProveedor int,
+@Documento varchar (50),
+@RazonSocial varchar (50),
+@Correo varchar (50),
+@Telefono varchar (50),
+@Estado bit,
+@Resultado int output,
+@Mensaje varchar (500) output)
+as
+begin 
+	set @Resultado = 1 
+	declare @ISPERSONA int 
+	if NOT EXISTS (select * from PROVEEDOR where documentoProveedor = @Documento and IdProveedor != @idProveedor)
+	begin 
+		update PROVEEDOR set 
+		documentoProveedor = @Documento,
+		razonSocialProveedor = @RazonSocial,
+		correoProveedor = @Correo,
+		telefonoProveedor = @Telefono,
+		Estado = @Estado
+		where IdProveedor = @idProveedor
+	end
+	else
+	begin
+			set @Resultado = 0
+			set @Mensaje = 'El número de documento ya existe'
+	end
+end
+go
+
+create Proc SP_EliminarProveedor(
+@IdProveedor int, 
+@Resultado bit output,
+@Mensaje varchar (500) output)
+as
+begin 
+	set @Resultado = 1
+	begin 
+	delete top(1) from PROVEEDOR where IdProveedor = @IdProveedor
+	end
+end
+go
+
+
+create Proc sp_RegistrarCliente(
+@Documento varchar(50),
+@NombreCompleto varchar(50),
+@Correo varchar(50),
+@telefono varchar(50),
+@Estado bit,
+@Resultado bit output,
+@Mensaje varchar(500)
+)as 
+begin 
+	set @Resultado=0
+	declare @IDPERSONA int 
+	if not exists (select *from CLIENTE WHERE documentoCliente = @Documento)
+
+		begin 
+		insert into CLIENTE(documentoCliente,nombreCompletoCliente,correoCliente,telefonoCliente,Estado) values
+		(@Documento,@NombreCompleto,@Correo,@telefono,@Estado)  
+
+		set @Resultado= SCOPE_IDENTITY()
+	end
+	else 
+		set @Mensaje= 'El número de documento ya existe'
+end
+go
+
+create Proc sp_ModificarCliente(
+@idCliente int,
+@Documento varchar(50),
+@NombreCompleto varchar(50),
+@Correo varchar(50),
+@Telefono varchar(50),
+@Estado int,
+@Resultado bit output,
+@mensaje varchar(500) output
+)as
+begin 
+	set @Resultado=1
+	declare @idPERSONA int 
+	if not exists(select *from CLIENTE where documentoCliente=@Documento and IdCliente= @idCliente)
+	begin 
+	update CLIENTE set 
+	documentoCliente = @Documento,
+	nombreCompletoCliente= @NombreCompleto,
+	correoCliente = @Correo,
+	Estado = @Estado
+	where IdCliente = @idCliente
+	end 
+
+	else 
+	begin
+		set @Resultado = 0 
+		set @mensaje = 'El número de documento ya existe '
+	end 
+end
+go
+
