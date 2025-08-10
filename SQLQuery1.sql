@@ -223,10 +223,12 @@ VALUES
 
 
 
----Estado =1 significa que hay stock o productos que pertenecen a esta categoria
---- Estado =2 significa que NO hay stock o producto que pertenecen a esta categoria
+---Estado =0 significa que hay stock o productos que pertenecen a esta categoria
+--- Estado =1 significa que NO hay stock o producto que pertenecen a esta categoria
 INSERT INTO CATEGORIA (descripcionCategoria, Estado)
 VALUES 
+('Bebidas', 1),
+('Comidas preparadas', 1),
 ('Carnes', 1),
 ('Embutidos', 1),
 ('Lácteos', 1),
@@ -669,4 +671,3 @@ begin
 	end 
 end
 go
-
