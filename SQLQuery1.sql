@@ -131,16 +131,15 @@ FechaRegistro datetime default getdate());
 go
 
 create table DatosNegocio(
-idNegocio int identity (1,1) primary key,
+idNegocio int primary key,
 nombreNegocio varchar (20) not null,
 NIT_DatoNegocio char(17) unique not null, --Se le da al NIT del negocio una longitud de 17 caracteres fijos, ya que son 14 números separados en bloques por 3 guiones
-ubicacionNegocio varchar (60) not null);
+ubicacionNegocio varchar (100) not null,
+logoNegocio varbinary(max) null);
 go
 
-
-
-
-
+select idNegocio, nombreNegocio, NIT_DatoNegocio, ubicacionNegocio from DatosNegocio where idNegocio=1
+insert into DatosNegocio (idNegocio, nombreNegocio, NIT_DatoNegocio, ubicacionNegocio) values (1, 'Comedor El Balde', '0614-250478-118-7', 'Puesto 129-3, Mercado Tinetti, San Salvador, San Salvador Centro, San Salvador')
 
 INSERT INTO TipoDocumentoCompra (nombreDocumentoCompra) VALUES 
 ('Factura'),
