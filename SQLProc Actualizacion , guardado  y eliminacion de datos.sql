@@ -185,3 +185,79 @@ begin
 
 	select * from USUARIO
 	select IdProveedor, documentoProveedor, razonSocialProveedor, correoProveedor, telefonoProveedor, Estado from PROVEEDOR 
+
+--Ejecutar a partir de CREATE TYPE
+--Procesos para registrar una compra
+
+
+CREATE TYPE [dbo].[EDetalle_Compra] AS TABLE(
+[IdProducto] int NULL,
+[PrecioCompra] decimal (10,2) NULL,
+[PrecioVenta] decimal (10,2) NULL,
+[Cantidad] int NULL,
+[MontoTotal] decimal (10,2) NULL
+)
+GO
+
+
+CREATE PROCEDURE sp_RegistrarCompra(
+    @IdUsuario int,
+    @IdProveedor int,
+    @TipoDocumento varchar(500),
+    @NumeroDocumento varchar(500),
+    @MontoTotal decimal(10,2),
+    @DetalleCompra [EDetalle_Compra] READONLY,
+    @Resultado bit output,
+    @Mensaje varchar(500) output
+)
+AS
+BEGIN
+    BEGIN TRY
+        DECLARE @idcompra int = 0
+        SET @Resultado = 1
+        SET @Mensaje = ''
+ 
+        -- Validar que todos los productos pertenezcan al proveedor especificado
+        IF EXISTS (
+            SELECT 1 
+            FROM @DetalleCompra dc
+            INNER JOIN PRODUCTO p ON dc.IdProducto = p.IdProducto
+            WHERE p.proveedor_id != @IdProveedor
+        )
+        BEGIN
+            SET @Resultado = 0
+            SET @Mensaje = 'Todos los productos deben pertenecer al mismo proveedor'
+            RETURN
+        END
+ 
+        BEGIN TRANSACTION registro
+ 
+        -- Insertar en COMPRA (sin IdProveedor)
+        INSERT INTO COMPRA (usuario_id, tipoDocumentoCompra_id, MontoTotal)
+        VALUES (@IdUsuario, 
+                (SELECT idTipoDocumentoCompra FROM TipoDocumentoCompra WHERE nombreDocumentoCompra = @TipoDocumento), 
+                @MontoTotal)
+ 
+        SET @idcompra = SCOPE_IDENTITY()
+ 
+        -- Insertar detalle de compra
+        INSERT INTO DETALLE_COMPRA (producto_id, compra_id, PrecioCompra, PrecioVenta, Cantidad, MontoTotal)
+        SELECT IdProducto, @idcompra, PrecioCompra, PrecioVenta, Cantidad, MontoTotal
+        FROM @DetalleCompra
+
+		update p set p.Stock = p.Stock + dc.Cantidad,
+		p.PrecioCompra = dc.PrecioCompra,
+		p.PrecioVenta = dc.PrecioVenta
+		from PRODUCTO p
+		inner join @DetalleCompra dc on dc.IdProducto= p.IdProducto
+
+ 
+        COMMIT TRANSACTION registro
+ 
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION registro
+        SET @Resultado = 0
+        SET @Mensaje = ERROR_MESSAGE()
+    END CATCH
+END
