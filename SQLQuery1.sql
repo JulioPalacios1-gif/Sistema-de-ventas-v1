@@ -20,7 +20,7 @@ IdUsuario int primary key identity(1,1),
 DocumentoUsuario varchar (100) unique not null,
 nombreCompletoUsuario varchar (60) not null,
 correoUsuario varchar (50) unique not null,
-Clave varchar (50) not null,
+Clave varchar (60) not null,
 rol_id int not null,
 foreign key (rol_id) references ROL(IdRol),
 Estado bit not null,
@@ -78,6 +78,7 @@ go
 create table COMPRA(
 IdCompra int identity(1,1) primary key,
 usuario_id int not null,
+NumeroDocumentoCompra int unique,
 foreign key (usuario_id) references USUARIO(IdUsuario),
 tipoDocumentoCompra_id int,
 foreign key (tipoDocumentoCompra_id) references TIpoDocumentoCompra(idTipoDocumentoCompra),
@@ -670,3 +671,4 @@ begin
 	end 
 end
 go
+
