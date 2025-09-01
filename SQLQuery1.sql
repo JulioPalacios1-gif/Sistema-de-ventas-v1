@@ -26,6 +26,12 @@ foreign key (rol_id) references ROL(IdRol),
 Estado bit not null,
 FechaCreacionUsuario datetime default getdate());
 go
+--Se modifica la longitud de la clave para que no haya problemas al momento de hashear la clave
+ALTER TABLE USUARIO ALTER COLUMN Clave varchar (60) not null;
+-- Actualizamos la clave del usuario a una ya hasheada
+update USUARIO set Clave = '$2a$11$wBKl1qAy88aZKr0R83z9Te1/sblMb0Nt0gXgL3PpsIrKaUvwfzzsW' where IdUsuario = 1 
+
+select *from usuario
 
 create table CATEGORIA(
 IdCategoria int primary key identity(1,1),
