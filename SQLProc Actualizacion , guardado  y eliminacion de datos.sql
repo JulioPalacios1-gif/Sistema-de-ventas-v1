@@ -1,7 +1,7 @@
 select * from USUARIO
+go
 
-
-alter PROC SP_REGISTRARUSUARIO(
+create PROC SP_REGISTRARUSUARIO(
 @Documento varchar(50),
 @nombreCompletoUsuario varchar (100),
 @correoUsuario varchar (100),
@@ -28,9 +28,10 @@ begin
 		set @Mensaje = 'No se puede repetir el documento para mas de un usuario'
 
 end
+go
 
 
-ALTER PROC SP_EDITARUSUARIO(
+create PROC SP_EDITARUSUARIO(
 @idUsuario int,
 @Documento varchar(50),
 @nombreCompletoUsuario varchar (100),
@@ -65,6 +66,7 @@ begin
 		set @Mensaje = 'No se puede repetir el documento para mas de un usuario'
 
 end
+go
 
 
 create PROC SP_ELIMINARUSUARIO(
@@ -103,10 +105,8 @@ begin
 		delete from USUARIO where IdUsuario = @idUsuario
 		set @Respuesta = 1
 	end
-	
-
-
 end
+go
 
 declare @respuesta bit
 declare @mensaje varchar (500)
@@ -117,6 +117,7 @@ select @respuesta
 select @mensaje
 
 select * from USUARIO
+go
 
 create Proc SP_RegistrarProveedor(
 @Documento varchar (50),
@@ -139,6 +140,7 @@ begin
 	else
 		set @Mensaje = 'El numero de documento ya existe'
 	end
+go
 
 create Proc SP_ModificarProveedor(
 @idProveedor int,
@@ -169,6 +171,7 @@ begin
 			set @Mensaje = 'El numero de documento ya existe'
 	end
 end
+go
 
 create Proc SP_EliminarProveedor(
 @IdProveedor int, 
@@ -181,6 +184,7 @@ begin
 	delete top(1) from PROVEEDOR where IdProveedor = @IdProveedor
 	end
 	end
+go
 
 
 	select * from USUARIO
@@ -199,7 +203,7 @@ CREATE TYPE [dbo].[EDetalle_Compra] AS TABLE(
 )
 GO
 
-
+--Si ya creó el procedimiento almacenado, por favor, eliminarlo y volverlo a crear tal y como está en este momento
 CREATE PROCEDURE sp_RegistrarCompra(
     @IdUsuario int,
     @IdProveedor int,
@@ -233,10 +237,10 @@ BEGIN
         BEGIN TRANSACTION registro
  
         -- Insertar en COMPRA (sin IdProveedor)
-        INSERT INTO COMPRA (usuario_id, tipoDocumentoCompra_id, MontoTotal)
+        INSERT INTO COMPRA (usuario_id, tipoDocumentoCompra_id, NumeroDocumentoCompra, MontoTotal)
         VALUES (@IdUsuario, 
                 (SELECT idTipoDocumentoCompra FROM TipoDocumentoCompra WHERE nombreDocumentoCompra = @TipoDocumento), 
-                @MontoTotal)
+                @NumeroDocumento, @MontoTotal)
  
         SET @idcompra = SCOPE_IDENTITY()
  
@@ -261,3 +265,7 @@ BEGIN
         SET @Mensaje = ERROR_MESSAGE()
     END CATCH
 END
+go
+truncate table Compra
+
+select *from COMPRA

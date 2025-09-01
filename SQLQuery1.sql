@@ -74,7 +74,7 @@ create table TipoDocumentoCompra(
 idTipoDocumentoCompra int identity(1,1) primary key,
 nombreDocumentoCompra varchar (20));
 go
-
+--Si no han creado compra, créenlo
 create table COMPRA(
 IdCompra int identity(1,1) primary key,
 usuario_id int not null,
@@ -85,6 +85,9 @@ foreign key (tipoDocumentoCompra_id) references TIpoDocumentoCompra(idTipoDocume
 MontoTotal decimal (10, 2),
 FechaRegistro datetime default getdate());
 go
+--Si ya crearon compra, ejecutar el siguiente comando
+alter table Compra add NumeroDocumentoCompra int
+
 
 create table DETALLE_COMPRA(
 IdDetalleCompra int primary key identity(1,1),
@@ -205,7 +208,7 @@ INSERT INTO ROL (nombreRol, descripcionRol) VALUES
 
 INSERT INTO USUARIO (DocumentoUsuario, nombreCompletoUsuario, correoUsuario, Clave, rol_id, Estado)
 VALUES
-('0001', 'Admin Isaac Valencia', 'admin@elbalde.com', 'admin123', 1, 1),
+('0001', 'Admin Isaac Valencia', 'admin@elbalde.com', '$2a$11$wBKl1qAy88aZKr0R83z9Te1/sblMb0Nt0gXgL3PpsIrKaUvwfzzsW', 1, 1),
 ('0002', 'Carlos López', 'carlos@elbalde.com', 'empleado01', 2, 1),
 ('0003', 'Ana García', 'ana@elbalde.com', 'empleado02', 2, 1),
 ('0004', 'José Pérez', 'jose@elbalde.com', 'empleado03', 2, 1),
@@ -267,8 +270,10 @@ VALUES
 ('PS02', 'Gelatina de colores', 'Vaso mediano', 7, 15, 30, 0.30, 0.60, 1);
 
 select * from USUARIO
+go
 
-alter  proc SP_CrearCategoria(
+
+create  proc SP_CrearCategoria(
 @Descripcion varchar(50),
 @Resultado bit output,
 @Estado bit,
@@ -286,7 +291,7 @@ begin
 end
 go
 
-alter PROC SP_ModificarCategoria(
+create PROC SP_ModificarCategoria(
 @IdCategoria int,
 @Estado bit,
 @Descripcion varchar(50),
@@ -324,14 +329,6 @@ begin
 end
 go
 
-select *from PROVEEDOR
-go
-
-select P.IdProducto,P.codigoProducto, P.nombreProducto, P.descripcionProducto,c.IdCategoria, c.descripcionCategoria as Categoria,pr.IdProveedor, pr.razonSocialProveedor, P.Stock, P.PrecioCompra, P.PrecioVenta, P.Estado from PRODUCTO P
-inner join CATEGORIA c on C.IdCategoria=P.categoria_id
-inner join PROVEEDOR pr on pr.IdProveedor=p.proveedor_id
-
-go
 create proc SP_CrearProducto(
 @CodigoProducto varchar(50),
 @nombreProducto varchar (75),
@@ -547,6 +544,7 @@ select @respuesta
 select @mensaje
 
 select * from USUARIO
+go
 
 create Proc SP_RegistrarProveedor(
 @Documento varchar (50),
