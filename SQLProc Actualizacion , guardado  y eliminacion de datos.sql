@@ -269,3 +269,83 @@ go
 truncate table Compra
 
 select *from COMPRA
+
+
+
+
+
+
+
+
+
+--Script de reporte de compra, ejecutar si no se ha hecho
+--inner join del cual se hace el proc
+SELECT 
+    CONVERT(char(10), c.FechaRegistro, 103) AS [FechaRegistro],
+    td.nombreDocumentoCompra AS [TipoDocumento],
+    c.NumeroDocumentoCompra,
+    c.MontoTotal,
+    u.nombreCompletoUsuario AS [UsuarioRegistro],
+    pr.documentoProveedor AS [DocumentoProveedor],
+    pr.razonSocialProveedor AS [RazonSocial],
+    p.codigoProducto AS [CodigoProducto],
+    p.nombreProducto AS [NombreProducto],
+    ca.descripcionCategoria AS [Categoria],
+    dc.PrecioCompra,
+    dc.PrecioVenta,
+    dc.Cantidad,
+    dc.PrecioCompra * dc.Cantidad AS [SubTotal]
+FROM COMPRA c
+INNER JOIN USUARIO u ON u.idUsuario = c.usuario_id
+INNER JOIN DETALLE_COMPRA dc ON dc.compra_id = c.idCompra
+INNER JOIN PRODUCTO p ON p.idProducto = dc.producto_id
+INNER JOIN PROVEEDOR pr ON pr.idProveedor = p.proveedor_id
+INNER JOIN CATEGORIA ca ON ca.idCategoria = p.categoria_id
+INNER JOIN TipoDocumentoCompra td ON td.idTipoDocumentoCompra = c.tipoDocumentoCompra_id;
+
+
+
+
+--ejecutrar el procedimiento almacenado en caso que no se haya ejecutado
+CREATE PROCEDURE sp_ReporteCompras
+    @fechaInicio VARCHAR(10),
+    @fechaFin VARCHAR(10),
+    @idProveedor INT
+AS
+BEGIN
+    -- Establecer formato de fecha pa no confundirse
+    SET DATEFORMAT dmy;
+
+    SELECT 
+        CONVERT(CHAR(10), c.FechaRegistro, 103) AS [FechaRegistro],
+        td.nombreDocumentoCompra AS [TipoDocumento],
+        c.NumeroDocumentoCompra,
+        c.MontoTotal,
+        u.nombreCompletoUsuario AS [UsuarioRegistro],
+        pr.documentoProveedor AS [DocumentoProveedor],
+        pr.razonSocialProveedor AS [RazonSocial],
+        p.codigoProducto AS [CodigoProducto],
+        p.nombreProducto AS [NombreProducto],
+        ca.descripcionCategoria AS [Categoria],
+        dc.PrecioCompra,
+        dc.PrecioVenta,
+        dc.Cantidad,
+        dc.PrecioCompra * dc.Cantidad AS [SubTotal]
+    FROM COMPRA c
+    INNER JOIN USUARIO u ON u.idUsuario = c.usuario_id
+    INNER JOIN DETALLE_COMPRA dc ON dc.compra_id = c.idCompra
+    INNER JOIN PRODUCTO p ON p.idProducto = dc.producto_id
+    INNER JOIN PROVEEDOR pr ON pr.idProveedor = p.proveedor_id
+    INNER JOIN CATEGORIA ca ON ca.idCategoria = p.categoria_id
+    INNER JOIN TipoDocumentoCompra td ON td.idTipoDocumentoCompra = c.tipoDocumentoCompra_id
+    WHERE CONVERT(DATE, c.FechaRegistro) BETWEEN CONVERT(DATE, @fechaInicio, 103) AND CONVERT(DATE, @fechaFin, 103)
+      AND pr.idProveedor = CASE WHEN @idProveedor = 0 THEN pr.idProveedor ELSE @idProveedor END;
+END
+go
+
+select*from compra
+select *from PROVEEDOR
+-- si se filtra a traves del 0 entonces mostrara todos los proveedores a los que se realizo la compra en esa fecha
+--si se utiliza otro numero mostrara el numero del proveedor al cual se compro esa fecha 
+exec sp_ReporteCompras '01/09/2025','04/09/2025',0
+--fin del proc

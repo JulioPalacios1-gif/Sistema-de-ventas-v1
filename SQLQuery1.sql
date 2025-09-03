@@ -126,6 +126,10 @@ MontoCambio decimal (10, 2) default 0.00,
 MontoTotal decimal (10, 2) default 0.00,
 FechaRegistro datetime default getdate());
 go
+--Si ya crearon venta, ejecutar el siguiente comando
+alter table VENTA add NumeroDocumentoVenta int
+
+
 
 
 create table DETALLE_VENTA(
