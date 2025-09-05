@@ -56,9 +56,9 @@ codigoProducto varchar (50) unique not null,
 nombreProducto varchar (75) not null,
 descripcionProducto varchar (100) not null,
 categoria_id int not null,
-foreign key (categoria_id) references CATEGORIA(IdCategoria),
+foreign key (categoria_id) references CATEGORIA(IdCategoria) on delete cascade,
 proveedor_id int not null,
-foreign key (proveedor_id) references PROVEEDOR(IdProveedor),
+foreign key (proveedor_id) references PROVEEDOR(IdProveedor) on delete cascade,
 Stock int not null default 0,
 PrecioCompra decimal (10, 2) default 0,
 PrecioVenta decimal (10, 2) default 0,
@@ -85,7 +85,7 @@ create table COMPRA(
 IdCompra int identity(1,1) primary key,
 usuario_id int not null,
 NumeroDocumentoCompra int unique,
-foreign key (usuario_id) references USUARIO(IdUsuario),
+foreign key (usuario_id) references USUARIO(IdUsuario) on delete cascade,
 tipoDocumentoCompra_id int,
 foreign key (tipoDocumentoCompra_id) references TIpoDocumentoCompra(idTipoDocumentoCompra),
 MontoTotal decimal (10, 2),
@@ -98,9 +98,9 @@ alter table Compra add NumeroDocumentoCompra int
 create table DETALLE_COMPRA(
 IdDetalleCompra int primary key identity(1,1),
 producto_id int not null,
-foreign key (producto_id) references PRODUCTO(IdProducto),
+foreign key (producto_id) references PRODUCTO(IdProducto) on delete cascade,
 compra_id int not null, 
-foreign key (compra_id) references COMPRA(IdCompra),
+foreign key (compra_id) references COMPRA(IdCompra) on delete cascade,
 PrecioCompra decimal (10, 2) default 0.00,
 PrecioVenta decimal (10, 2) default 0.00,
 Cantidad int not null,
@@ -116,9 +116,9 @@ go
 create table VENTA(
 IdVenta int primary key identity,
 usuario_id int not null,
-foreign key (usuario_id) references USUARIO(IdUsuario),
+foreign key (usuario_id) references USUARIO(IdUsuario) on delete cascade,
 cliente_id int not null,
-foreign key (cliente_id) references CLIENTE(IdCliente),
+foreign key (cliente_id) references CLIENTE(IdCliente) on delete cascade,
 tipoDocumentoVenta_id int,
 foreign key (tipoDocumentoVenta_id) references TipoDocumentoVenta(idTipoDocumentoVenta),
 MontoPago decimal (10, 2) default 0.00,
@@ -135,9 +135,9 @@ alter table VENTA add NumeroDocumentoVenta int
 create table DETALLE_VENTA(
 IdDetalleVenta int primary key identity,
 venta_id int not null, 
-foreign key (venta_id) references VENTA(IdVenta),
+foreign key (venta_id) references VENTA(IdVenta) on delete cascade,
 producto_id int not null,
-foreign key (producto_id) references PRODUCTO(IdProducto),
+foreign key (producto_id) references PRODUCTO(IdProducto) on delete cascade,
 PrecioVenta decimal (10, 2) default 0,
 Cantidad int not null,
 SubTotal decimal (10, 2) default 0,
@@ -649,7 +649,7 @@ begin
 end
 go
 
-create Proc sp_ModificarCliente(
+alter Proc sp_ModificarCliente(
 @idCliente int,
 @Documento varchar(50),
 @NombreCompleto varchar(50),
@@ -662,7 +662,7 @@ create Proc sp_ModificarCliente(
 begin 
 	set @Resultado=1
 	declare @idPERSONA int 
-	if not exists(select *from CLIENTE where documentoCliente=@Documento and IdCliente= @idCliente)
+	if not exists(select *from CLIENTE where documentoCliente=@Documento and IdCliente != @idCliente)
 	begin 
 	update CLIENTE set 
 	documentoCliente = @Documento,
@@ -680,3 +680,4 @@ begin
 end
 go
 
+select *from DETALLE_VENTA

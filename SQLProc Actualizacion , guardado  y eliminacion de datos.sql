@@ -347,5 +347,5 @@ select*from compra
 select *from PROVEEDOR
 -- si se filtra a traves del 0 entonces mostrara todos los proveedores a los que se realizo la compra en esa fecha
 --si se utiliza otro numero mostrara el numero del proveedor al cual se compro esa fecha 
-exec sp_ReporteCompras '01/09/2025','04/09/2025',0
+exec sp_ReporteCompras '01/08/2025','04/09/2025',0
 --fin del proc
