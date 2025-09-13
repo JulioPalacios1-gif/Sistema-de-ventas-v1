@@ -680,4 +680,3 @@ begin
 end
 go
 
-select *from DETALLE_VENTA

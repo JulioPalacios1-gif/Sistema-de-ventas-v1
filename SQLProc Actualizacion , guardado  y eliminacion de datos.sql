@@ -349,3 +349,83 @@ select *from PROVEEDOR
 --si se utiliza otro numero mostrara el numero del proveedor al cual se compro esa fecha 
 exec sp_ReporteCompras '01/08/2025','04/09/2025',0
 --fin del proc
+
+
+--Procesos para registrar una compra
+
+
+CREATE TYPE [dbo].[EDetalle_Venta] AS TABLE(
+[IdProducto] int NULL,
+[PrecioVenta] decimal (10,2) NULL,
+[Cantidad] int NULL,
+[MontoTotal] decimal (10,2) NULL)
+GO
+
+CREATE PROCEDURE sp_RegistrarVenta(
+    @IdUsuario int,
+    @IdCliente int,
+    @TipoDocumento varchar(500),
+    @NumeroDocumento varchar(500),
+    @MontoPago decimal (10,2),
+    @MontoCambio decimal (10,2),
+    @MontoTotal decimal(10,2),
+    @DetalleVenta [EDetalle_Venta] READONLY,
+    @Resultado bit output,
+    @Mensaje varchar(500) output
+)
+AS
+BEGIN
+    BEGIN TRY
+        DECLARE @idventa int = 0
+        SET @Resultado = 1
+        SET @Mensaje = ''
+ 
+        BEGIN TRANSACTION registro
+ 
+        INSERT INTO VENTA(usuario_id, cliente_id, tipoDocumentoVenta_id, NumeroDocumentoVenta, MontoPago, MontoCambio, MontoTotal)
+        VALUES (@IdUsuario, @IdCliente, 
+                (SELECT idTipoDocumentoVenta FROM TipoDocumentoVenta WHERE nombreTipoDocumentoVenta = @TipoDocumento), 
+                @NumeroDocumento, @MontoPago, @MontoCambio, @MontoTotal)
+ 
+        SET @idventa = SCOPE_IDENTITY()
+ 
+        -- Insertar detalle de compra
+        INSERT INTO DETALLE_VENTA (producto_id, venta_id, PrecioVenta, Cantidad, SubTotal)
+        SELECT IdProducto, @idventa, PrecioVenta, Cantidad, MontoTotal
+        FROM @DetalleVenta
+
+		update p set p.Stock = p.Stock - dv.Cantidad
+		from PRODUCTO p 
+		inner join @DetalleVenta dv on dv.IdProducto= p.IdProducto
+
+ 
+        COMMIT TRANSACTION registro
+ 
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION registro
+        SET @Resultado = 0
+        SET @Mensaje = ERROR_MESSAGE()
+    END CATCH
+END
+go
+    
+--Select para ver los detalles de la venta
+select 
+    v.IdVenta, 
+    u.nombreCompletoUsuario, 
+    c.documentoCliente, 
+    c.nombreCompletoCliente, 
+    tdv.nombreTipoDocumentoVenta, 
+    v.NumeroDocumentoVenta, 
+    v.MontoPago, v.MontoCambio, 
+    v.MontoTotal, 
+    CONVERT(char(10), v.FechaRegistro, 103) AS [FechaRegistro]
+from Venta v
+inner join USUARIO u on u.IdUsuario=v.usuario_id
+inner join CLIENTE c on c.IdCliente = v.cliente_id
+inner join TipoDocumentoVenta tdv on tdv.idTipoDocumentoVenta=v.tipoDocumentoVenta_id
+
+select p.nombreProducto, p.PrecioVenta, dv.Cantidad, dv.SubTotal
+from DETALLE_VENTA dv
+inner join PRODUCTO p on p.IdProducto=dv.producto_id
