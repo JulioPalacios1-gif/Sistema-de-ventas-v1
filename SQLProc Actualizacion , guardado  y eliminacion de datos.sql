@@ -266,17 +266,6 @@ BEGIN
     END CATCH
 END
 go
-truncate table Compra
-
-select *from COMPRA
-
-
-
-
-
-
-
-
 
 --Script de reporte de compra, ejecutar si no se ha hecho
 --inner join del cual se hace el proc
@@ -425,7 +414,46 @@ from Venta v
 inner join USUARIO u on u.IdUsuario=v.usuario_id
 inner join CLIENTE c on c.IdCliente = v.cliente_id
 inner join TipoDocumentoVenta tdv on tdv.idTipoDocumentoVenta=v.tipoDocumentoVenta_id
+go
 
 select p.nombreProducto, p.PrecioVenta, dv.Cantidad, dv.SubTotal
 from DETALLE_VENTA dv
 inner join PRODUCTO p on p.IdProducto=dv.producto_id
+go
+
+
+--Script para el reporte de ventas
+CREATE PROCEDURE sp_ReporteVentas
+    @fechaInicio VARCHAR(10),
+    @fechaFin VARCHAR(10),
+    @idCliente INT
+AS
+BEGIN
+    -- Establecer formato de fecha pa no confundirse
+    SET DATEFORMAT dmy;
+
+    SELECT 
+        CONVERT(CHAR(10), v.FechaRegistro, 103) AS [Fecha de registro],
+        td.nombreTipoDocumentoVenta AS [TipoDocumento],
+        v.NumeroDocumentoVenta,
+        v.MontoTotal,
+        u.nombreCompletoUsuario AS [UsuarioRegistro],
+        cl.IdCliente AS [Documento del Cliente],
+        cl.nombreCompletoCliente AS [Cliente],
+        p.codigoProducto AS [Código Producto],
+        p.nombreProducto AS [Nombre Producto],
+        ca.descripcionCategoria AS [Categoría],
+        dv.PrecioVenta,
+        dv.Cantidad,
+        dv.PrecioVenta * dv.Cantidad AS [SubTotal]
+    FROM VENTA v
+    INNER JOIN USUARIO u ON u.idUsuario = v.usuario_id
+    INNER JOIN DETALLE_VENTA dv ON dv.venta_id = v.IdVenta
+    INNER JOIN PRODUCTO p ON p.idProducto = dv.producto_id
+    INNER JOIN CLIENTE cl ON cl.IdCliente=v.cliente_id
+    INNER JOIN CATEGORIA ca ON ca.idCategoria = p.categoria_id
+    INNER JOIN TipoDocumentoVenta td ON td.idTipoDocumentoVenta = v.tipoDocumentoVenta_id
+    WHERE CONVERT(DATE, v.FechaRegistro) BETWEEN CONVERT(DATE, @fechaInicio, 103) AND CONVERT(DATE, @fechaFin, 103)
+      AND cl.IdCliente = CASE WHEN @idCliente = 0 THEN cl.IdCliente ELSE @idCliente END;
+END
+go
